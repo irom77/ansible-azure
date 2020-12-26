@@ -1,0 +1,13 @@
+---
+- name: Test azure_tags module
+  hosts: localhost
+  vars_files:
+    - vars/azure_provider.yml
+  tasks:
+    - name: Pull tags
+      irom77.azure.azure_tags:
+        tgs: applicationname:awx,applicationname:jenkins
+        provider: '{{azure_provider_test}}'
+      register: addresses
+    - debug: 
+        var: addresses
