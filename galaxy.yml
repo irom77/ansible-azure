@@ -49,7 +49,7 @@ repository: https://github.com/irom77/ansible-azure
 documentation: ''
 
 # The URL to the homepage of the collection/project
-homepage: https://www.linkedin.com/in/romaniuk/
+homepage: https://medium.com/@irekromaniuk
 
 # The URL to the collection issue tracker
 issues: https://github.com/irom77/ansible-azure/issues
