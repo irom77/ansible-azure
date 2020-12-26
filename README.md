@@ -4,8 +4,8 @@
 
 # Requirements
 
-Ansible >= 2.9
-Python >= 3.6
+- Ansible >= 2.9
+- Python >= 3.6
 
 # Example usage
 
