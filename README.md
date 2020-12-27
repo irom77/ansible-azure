@@ -9,7 +9,7 @@
 
 # Example usage
 
-See examples directory, and example of `var_files` provider below
+See examples directory, and example of '{{azure_provider_test}}' provider (`var_files`) below
 
 ```
 azure_provider_test:
