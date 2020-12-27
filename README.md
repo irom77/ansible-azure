@@ -9,7 +9,17 @@
 
 # Example usage
 
-See examples directory
+See examples directory, and example of `var_files` provider below
+
+```
+azure_provider_test:
+  tgs: creator: me
+  client_id: ***
+  subscription_id: ***
+  tenant: ***
+  secret: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+```
 
 ```
 $ ansible-galaxy collection install irom77.azure
