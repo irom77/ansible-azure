@@ -14,6 +14,7 @@ EXAMPLES = '''
 '''
 from ansible.module_utils.basic import *
 import requests, json, urllib3
+TIMEOUT=3
 def get_token(provider):
     """ Get authorization token """
     url_token="https://login.microsoftonline.com/" + provider['tenant'] + "/oauth2/token"
@@ -25,7 +26,7 @@ def get_token(provider):
         'resource': 'https://management.azure.com/',
         }  
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)     
-    response = requests.post(url_token, data=payload, verify=False) 
+    response = requests.post(url_token, data=payload, verify=False, timeout=TIMEOUT) 
     if response.status_code == 200:
         Token = json.loads(response.content)["access_token"]
     else:
@@ -62,7 +63,7 @@ def tag_pull(provider, tag):
     except Exception as e:        
         return [], str(e)
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)   
-    response = requests.post(url_graph, headers=headers, data = json.dumps(payload), verify=False)
+    response = requests.post(url_graph, headers=headers, data = json.dumps(payload), verify=False, timeout=TIMEOUT)
     if response.status_code == 200:
         if 'data' in response.json():
             return response.json()['data']['rows'][0][0], ""   
