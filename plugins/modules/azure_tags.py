@@ -34,8 +34,26 @@ def get_token(provider):
         raise Exception(json.dumps(response.json()))
     return { "Authorization": str("Bearer "+ Token), 'Content-Type': 'application/json'}    
 
-def tag_pull(provider, tag):
+def tag_pull(provider, query):
     """ Pull addresses with tag from Azure  """
+    url_graph = "https://management.azure.com/providers/Microsoft.ResourceGraph/resources?api-version=2019-04-01"
+    
+    payload,headers = {
+        "subscriptions": [provider['subscription_id']],
+        "query": " ".join(query.split()) 
+        },{}
+    try:
+        headers = get_token(provider)
+    except Exception as e:        
+        return [], str(e)
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)   
+    response = requests.post(url_graph, headers=headers, data = json.dumps(payload), verify=False, timeout=TIMEOUT)
+    if response.status_code == 200:
+        if 'data' in response.json():
+            return response.json()['data']['rows'][0][0], ""   
+    return [], json.dumps(response.json())
+
+def query_VMs(tag):
     tag1=tag.split(':')[0]
     tag2=tag.split(':')[1]
     Query = """Resources
@@ -52,30 +70,21 @@ def tag_pull(provider, tag):
                 )
                 on nicId
             | project-away vmId, nicId, nicId1, vmName
-            | union (Resources
+            | summarize Tagged = make_list(IP)""".format(tag1=tag1,tag2=tag2)
+    return Query        
+
+def query_NICs(tag):
+    tag1=tag.split(':')[0]
+    tag2=tag.split(':')[1]
+    Query = """Resources
             | where type =~ 'microsoft.network/networkinterfaces'
-            | where tags['applicationname'] =~ 'subscription defaults'
+            | where tags['{tag1}'] =~ '{tag2}'
             | mv-expand ipconfig=properties.ipConfigurations 
             | project  nicId = id, IP = ipconfig.properties.privateIPAddress
-            | project-away nicId)
+            | project-away nicId
             | summarize Tagged = make_list(IP)""".format(tag1=tag1,tag2=tag2)
-    url_graph = "https://management.azure.com/providers/Microsoft.ResourceGraph/resources?api-version=2019-04-01"
-    
-    payload,headers = {
-        "subscriptions": [provider['subscription_id']],
-        "query": " ".join(Query.split()) 
-        },{}
-    try:
-        headers = get_token(provider)
-    except Exception as e:        
-        return [], str(e)
-    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)   
-    response = requests.post(url_graph, headers=headers, data = json.dumps(payload), verify=False, timeout=TIMEOUT)
-    if response.status_code == 200:
-        if 'data' in response.json():
-            return response.json()['data']['rows'][0][0], ""   
-    return [], json.dumps(response.json())
- 
+    return Query
+
 def main():
     fields = {
         "tgs": {"required": True, "type": "str"},
@@ -95,9 +104,12 @@ def main():
         for tag in tgs.split(','):
                 # module.log("Tag: {}".format(tag))
                 debug_msg= debug_msg + "{} ".format(tag.strip())
-                result, error = tag_pull(provider,tag.strip()) 
+                result, error = tag_pull(provider,query_VMs(tag.strip()))      
                 if len(result) > 0:
-                    response.extend(result)   
+                    response.extend(result)  
+                result, error = tag_pull(provider,query_NICs(tag.strip())) 
+                if len(result) > 0:
+                    response.extend(result)     
         response = list(set(response))
         if response:
             module.exit_json(changed=True, meta=response, debug_msg=debug_msg.strip())

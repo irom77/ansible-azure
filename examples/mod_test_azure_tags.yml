@@ -6,7 +6,7 @@
   tasks:
     - name: Pull tags
       irom77.azure.azure_tags:
-        tgs: applicationname:awx,applicationname:jenkins
+        tgs: test:irek
         provider: '{{azure_provider_test}}'
       register: addresses
     - debug: 
