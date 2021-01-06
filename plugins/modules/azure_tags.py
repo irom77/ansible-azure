@@ -2,13 +2,14 @@
 DOCUMENTATION = '''
 ---
 module: azure_tags
-short_description: Pull tagged IP addresses 
+short_description: Pull tagged IP addresses
+description: Module pulls IP addresses of tagged objects on Azure
 '''
 
 EXAMPLES = '''
 - name: Pull addresses from Azure
   azure_tags:
-    tgs: creator:JoeBerry, applicationname:cyberark
+    tgs: creator:me, applicationname:cyberark
     provider: "{{azure_provider_test}}"
     register: addr
 '''
@@ -51,6 +52,12 @@ def tag_pull(provider, tag):
                 )
                 on nicId
             | project-away vmId, nicId, nicId1, vmName
+            | union (Resources
+            | where type =~ 'microsoft.network/networkinterfaces'
+            | where tags['applicationname'] =~ 'subscription defaults'
+            | mv-expand ipconfig=properties.ipConfigurations 
+            | project  nicId = id, IP = ipconfig.properties.privateIPAddress
+            | project-away nicId)
             | summarize Tagged = make_list(IP)""".format(tag1=tag1,tag2=tag2)
     url_graph = "https://management.azure.com/providers/Microsoft.ResourceGraph/resources?api-version=2019-04-01"
     
